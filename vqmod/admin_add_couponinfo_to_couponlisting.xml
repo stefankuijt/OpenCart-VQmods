@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+	<id>Admin: Coupon fields</id>
+	<version>1.0</version>
+	<vqmver>2.X</vqmver>
+	<author>Stefan Kuijt</author>
+	
+	<!-- edit listing -->
+	<file name="admin/view/template/marketing/coupon_list.tpl">
+	  <operation>
+		  <search position="replace" index="1"><![CDATA[  
+			<td class="text-left"><?php if ($sort == 'c.date_start') { ?>
+		  ]]></search>
+		  <add><![CDATA[
+			<td class="text-right"><?php if ($sort == 'total') { ?>
+			<a href="<?php echo $sort_total; ?>">Total Amount</a>
+			<?php } else { ?>
+			<a href="<?php echo $sort_total; ?>">Total Amount</a>
+			<?php } ?></td>
+			<td class="text-left"><?php if ($sort == 'type') { ?>
+			<a href="<?php echo $sort_type; ?>">Type</a>
+			<?php } else { ?>
+			<a href="<?php echo $sort_type; ?>">Type</a>
+			<?php } ?></td>
+			<td class="text-left"><?php if ($sort == 'shipping') { ?>
+			<a href="<?php echo $sort_shipping; ?>">Shipping</a>
+			<?php } else { ?>
+			<a href="<?php echo $sort_shipping; ?>">Shipping</a>
+			<?php } ?></td>
+			<td class="text-left"><?php if ($sort == 'c.date_start') { ?>
+		  ]]></add>
+	   </operation>
+	</file>
+	
+	<file name="admin/view/template/marketing/coupon_list.tpl">
+	  <operation>
+		  <search position="after" index="1"><![CDATA[  
+            <td class="text-right"><?php echo $coupon['discount']; ?></td>
+		  ]]></search>
+		  <add><![CDATA[
+			<td class="text-right"><?php echo $coupon['total']; ?></td>
+			<td class="text-left"><?php echo (($coupon['type'] == 'P') ? 'Percentage' : 'Fixed'); ?></td>
+			<td class="text-left"><?php echo (($coupon['shipping'] == 1) ? 'Free' : '-'); ?></td>
+		  ]]></add>
+	   </operation>
+	</file>
+	
+	<!-- edit controller -->
+	<file name="admin/controller/marketing/coupon.php">
+	  <operation>
+		  <search position="after" index="1"><![CDATA[
+			'discount'   => $result['discount'],
+		  ]]></search>
+		  <add><![CDATA[		  
+			'total'   	 => $result['total'],
+			'type'   	 => $result['type'],
+			'shipping'   => $result['shipping'],
+		  ]]></add>
+	   </operation>
+	</file>
+	<file name="admin/controller/marketing/coupon.php">
+	  <operation>
+		  <search position="after" index="1"><![CDATA[
+			$data['sort_discount'] = $this->url->link('marketing/coupon', 'token=' . $this->session->data['token'] . '&sort=discount' . $url, 'SSL');
+		  ]]></search>
+		  <add><![CDATA[		  
+			$data['sort_total'] = $this->url->link('marketing/coupon', 'token=' . $this->session->data['token'] . '&sort=total' . $url, 'SSL');
+			$data['sort_type'] = $this->url->link('marketing/coupon', 'token=' . $this->session->data['token'] . '&sort=type' . $url, 'SSL');
+			$data['sort_shipping'] = $this->url->link('marketing/coupon', 'token=' . $this->session->data['token'] . '&sort=shipping' . $url, 'SSL');
+		  ]]></add>
+	   </operation>
+	</file>
+	
+	<!-- edit model -->
+	<file name="admin/model/marketing/coupon.php">
+	  <operation>
+		  <search position="replace" index="1"><![CDATA[ 
+			$sql = "SELECT coupon_id, name, code, discount, date_start, date_end, status FROM " . DB_PREFIX . "coupon"; 
+		  ]]></search>
+		  <add><![CDATA[
+			$sql = "SELECT coupon_id, name, code, discount, total, type, shipping, date_start, date_end, status FROM " . DB_PREFIX . "coupon"; 
+		  ]]></add>
+	   </operation>
+	</file>
+	
+	<file name="admin/model/marketing/coupon.php">
+	  <operation>
+		  <search position="after" index="1"><![CDATA[ 
+			$sort_data = array(
+		  ]]></search>
+		  <add><![CDATA[
+			'total',
+			'type',
+			'shipping',
+		  ]]></add>
+	   </operation>
+	</file>
+	
+	<!-- edit controller: end date of coupon (optional) -->
+	<file name="admin/controller/marketing/coupon.php">
+	  <operation>
+		  <search position="replace" index="1"><![CDATA[
+			$data['date_end'] = date('Y-m-d', strtotime('+1 month'));
+		  ]]></search>
+		  <add><![CDATA[		  
+			$data['date_end'] = date('Y-m-d', strtotime('+3 month'));
+		  ]]></add>
+	   </operation>
+	</file>
+</modification>

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+	<id>Admin: Product Category Filter</id>
+	<version>1.0</version>
+	<vqmver>2.X</vqmver>
+	<author>Stefan Kuijt</author>
+
+	<file name="admin/controller/catalog/product.php">
+	      <operation>
+	          <search position="before" index="1,2,3,4,6,7,8,9"><![CDATA[
+                if (isset($this->request->get['filter_status'])) {
+			  ]]></search>
+	          <add><![CDATA[
+				if (isset($this->request->get['filter_category'])) {
+					$url .= '&filter_category=' . $this->request->get['filter_category'];
+				}
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/controller/catalog/product.php">
+	      <operation>
+	          <search position="before" index="5"><![CDATA[
+                if (isset($this->request->get['filter_status'])) {
+			  ]]></search>
+	          <add><![CDATA[                
+				if (isset($this->request->get['filter_category'])) {
+					$filter_category = $this->request->get['filter_category'];
+				} else {
+					$filter_category = null;
+				}
+			  ]]></add>
+	       </operation>
+	</file>	
+	
+	<file name="admin/controller/catalog/product.php">
+	      <operation>
+	          <search position="before" index="1"><![CDATA[               
+				$data['filter_status'] = $filter_status;
+			  ]]></search>
+	          <add><![CDATA[    
+				$data['filter_category'] = $filter_category;
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/controller/catalog/product.php">
+	      <operation>
+	          <search position="before" index="1"><![CDATA[               
+				'filter_status'   => $filter_status,
+			  ]]></search>
+	          <add><![CDATA[              
+				'filter_category'   => $filter_category,
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/model/catalog/product.php">
+	      <operation>
+	          <search position="replace" index="1"><![CDATA[               
+				$sql = "SELECT COUNT(DISTINCT p.product_id) AS total FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id)";
+			  ]]></search>
+	          <add><![CDATA[              
+				$sql = "SELECT COUNT(DISTINCT p.product_id) AS total FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) LEFT JOIN " . DB_PREFIX . "product_to_category cat ON (p.product_id = cat.product_id)";
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/model/catalog/product.php">
+	      <operation>
+	          <search position="replace" index="1"><![CDATA[               
+				$sql = "SELECT * FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) WHERE pd.language_id = '" . (int)$this->config->get('config_language_id') . "'";
+			  ]]></search>
+	          <add><![CDATA[   
+				$sql = "SELECT p.*, pd.*, cat.category_id FROM " . DB_PREFIX . "product p LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id) LEFT JOIN " . DB_PREFIX . "product_to_category cat ON (p.product_id = cat.product_id) WHERE pd.language_id = '" . (int)$this->config->get('config_language_id') . "'";			  
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/model/catalog/product.php">
+	      <operation>
+	          <search position="before" index="1,2"><![CDATA[               
+				if (isset($data['filter_status']) && !is_null($data['filter_status'])) {
+			  ]]></search>
+	          <add><![CDATA[              
+				if (isset($data['filter_category']) && !is_null($data['filter_category'])) {
+					$sql .= " AND cat.category_id = '" . (int)$data['filter_category'] . "'";
+				}
+			  ]]></add>
+	       </operation>
+	</file>
+
+	<file name="admin/controller/catalog/product.php">
+	      <operation>
+	          <search position="after" index="1"><![CDATA[               
+				$data['products'] = array();
+			  ]]></search>
+	          <add><![CDATA[  
+				$sqlcat = "SELECT
+								cp.category_id AS category_id, GROUP_CONCAT(cd1.name ORDER BY cp.level SEPARATOR '&nbsp;&nbsp;&gt;&nbsp;&nbsp;') AS name, c1.parent_id, c1.sort_order 
+							FROM 
+								" . DB_PREFIX . "category_path cp 
+							LEFT JOIN 
+								" . DB_PREFIX . "category c1 ON (cp.category_id = c1.category_id) 
+							LEFT JOIN 
+								" . DB_PREFIX . "category c2 ON (cp.path_id = c2.category_id) 
+							LEFT JOIN 
+								" . DB_PREFIX . "category_description cd1 ON (cp.path_id = cd1.category_id) 
+							LEFT JOIN 
+								" . DB_PREFIX . "category_description cd2 ON (cp.category_id = cd2.category_id) 
+							WHERE 
+								cd1.language_id = '" . (int)$this->config->get('config_language_id') . "' AND cd2.language_id = '" . (int)$this->config->get('config_language_id') . "' 
+							GROUP BY 
+								cp.category_id
+							ORDER BY 
+								parent_id, sort_order
+							";
+		
+				$data['categories'] = $this->db->query($sqlcat);		
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/view/template/catalog/product_list.tpl">
+	      <operation>
+	          <search position="replace" index="1"><![CDATA[               
+				<button type="button" id="button-filter" class="btn btn-primary pull-right"><i class="fa fa-search"></i> <?php echo $button_filter; ?></button>
+			  ]]></search>
+	          <add><![CDATA[  
+				  <div class="form-group">
+					<label class="control-label" for="input-category">Category</label>
+					<select name="filter_category" id="input-category" class="form-control">
+					  <option value=""></option>
+					  <?php foreach($categories->rows AS $k => $cat) { ?>
+					  <option value="<?php echo $cat['category_id']; ?>" <?php echo (($cat['category_id'] == $filter_category) ? 'selected="selected"' : '') ?>><?php echo $cat['name']; ?></option>
+					  <?php } ?>
+					</select>
+				  </div>
+				</div>
+				<div class="col-sm-12">
+				  <button type="button" id="button-filter" class="btn btn-primary pull-right"><i class="fa fa-search"></i><?php echo $button_filter; ?></button>
+			  ]]></add>
+	       </operation>
+	</file>
+	
+	<file name="admin/view/template/catalog/product_list.tpl">
+	      <operation>
+	          <search position="before" index="1"><![CDATA[               
+				var filter_status = $('select[name=\'filter_status\']').val();
+			  ]]></search>
+	          <add><![CDATA[  
+				var filter_category = $('select[name=\'filter_category\']').val();
+				if (filter_category) {
+					url += '&filter_category=' + encodeURIComponent(filter_category);
+				}
+			  ]]></add>
+	       </operation>
+	</file>
+</modification>
